@@ -32,6 +32,8 @@ fn main() {
         pool.execute(|| {
             handle_connection(stream);
         });
+
+        info!("Connection established!")
     }
 }
 
