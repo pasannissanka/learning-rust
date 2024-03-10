@@ -39,34 +39,43 @@ impl Router {
                 Self::read_path(&path, map);
             } else {
                 // Add the file to the map
-                match path.to_str() {
-                    Some(p) => {
-                        if p.contains("index.html") {
-                            // If the file is index.html, add it to the root page
-                            debug!("page: {:#?}, path: {:#?}", root_page, p);
-                            map.insert(
-                                String::from(root_page.to_string()),
-                                String::from(p.to_string()),
-                            );
-                        } else {
-                            // Otherwise, add it to the map
-                            let page = if p.contains("html") {
-                                path.strip_prefix(env::current_dir().unwrap())
-                                    .unwrap()
-                                    .with_extension("")
-                            } else {
-                                path.strip_prefix(env::current_dir().unwrap())
-                                    .unwrap().to_path_buf()
-                            };
-                            let page_str = remove_first_occurrence(page.to_str().unwrap(), "pages");
-                            debug!("page: {:#?}, path: {:#?}", page_str, p);
-                            map.insert(page_str, String::from(p.to_string()));
-                        }
+                match path.strip_prefix(env::current_dir().unwrap()) {
+                    Ok(stripped_path) => {
+                        match stripped_path.to_str() {
+                            Some(p) => {
+                                if p.contains("index.html") {
+                                    // If the file is index.html, add it to the root page
+                                    debug!("page: {:#?}, path: {:#?}", root_page, p);
+                                    map.insert(
+                                        String::from(root_page.to_string()),
+                                        String::from(p.to_string()),
+                                    );
+                                } else {
+                                    // Otherwise, add it to the map
+                                    let page = if p.contains("html") {
+                                        path.strip_prefix(env::current_dir().unwrap())
+                                            .unwrap()
+                                            .with_extension("")
+                                    } else {
+                                        path.strip_prefix(env::current_dir().unwrap())
+                                            .unwrap()
+                                            .to_path_buf()
+                                    };
+                                    let page_str =
+                                        remove_first_occurrence(page.to_str().unwrap(), "pages");
+                                    debug!("page: {:#?}, path: {:#?}", page_str, p);
+                                    map.insert(page_str, String::from(p.to_string()));
+                                }
+                            }
+                            None => {
+                                error!("Failed to convert path to string");
+                            }
+                        };
                     }
-                    None => {
-                        error!("Failed to convert path to string");
+                    Err(_) => {
+                        error!("Failed to strip prefix from path: {:#?}", path);
                     }
-                };
+                }
             }
         }
     }
