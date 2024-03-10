@@ -1,20 +1,45 @@
 use log::{debug, error, info};
 use std::{collections::HashMap, env, path::Path};
 
+/// The Router struct
+/// 
+/// The Router struct is responsible for initializing and storing the routes of the server
+/// 
+/// # Fields
+/// 
+/// * `routes` - A HashMap of the routes
 pub struct Router {
     routes: HashMap<String, String>,
 }
 
 impl Router {
+    /// Create a new Router
+    ///
+    /// The Router will initialize the routes from the pages directory
+    ///
+    /// # Returns
+    ///
+    /// A new Router instance
+    ///
+    /// # Panics
+    ///
+    /// The `new` function will panic if the current directory cannot be found
+    /// or if the pages directory cannot be found
+    ///
     pub fn new() -> Self {
         let routes = Self::init_routes();
         Router { routes }
     }
 
+    /// Get the routes
     pub fn get_routes(&self) -> &HashMap<String, String> {
         &self.routes
     }
 
+    /// Initialize the routes
+    ///
+    /// The routes are initialized by reading the pages directory
+    ///
     fn init_routes() -> HashMap<String, String> {
         debug!("Initializing routes...");
         let current_dir = env::current_dir().expect("Failed to get current directory");
@@ -81,6 +106,13 @@ impl Router {
     }
 }
 
+/// Remove the first occurrence of a pattern from a string
+///
+/// # Arguments
+///
+/// * `input` - The input string
+/// * `pattern` - The pattern to remove
+///
 fn remove_first_occurrence(input: &str, pattern: &str) -> String {
     if let Some(index) = input.find(pattern) {
         let (_, rest) = input.split_at(index);
