@@ -1,3 +1,4 @@
+use lazy_static::lazy_static;
 use log::{error, info};
 use simple_logger::SimpleLogger;
 use std::{
@@ -6,12 +7,18 @@ use std::{
 };
 
 mod router;
+mod thread_pool;
+
+lazy_static! {
+    static ref ROUTES: router::Router = router::Router::new();
+}
 
 fn main() {
     SimpleLogger::new().init().unwrap();
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let _router: &router::Router = &*ROUTES;
 
-    let router = router::Router::new();
+    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let pool = thread_pool::ThreadPool::new(4);
 
     for stream in listener.incoming() {
         let stream = match stream {
@@ -22,11 +29,15 @@ fn main() {
             Ok(stream) => stream,
         };
 
-        handle_connection(stream, &router);
+        pool.execute(|| {
+            handle_connection(stream);
+        });
     }
 }
 
-fn handle_connection(mut stream: TcpStream, router: &router::Router) {
+fn handle_connection(mut stream: TcpStream) {
+    let router: &router::Router = &*ROUTES;
+
     let buf_reader = BufReader::new(&mut stream);
     let request_line = buf_reader.lines().next().unwrap().unwrap();
 
@@ -44,7 +55,7 @@ fn handle_connection(mut stream: TcpStream, router: &router::Router) {
         None => {
             error!("Route not found: {:#?}", path);
             String::from("HTTP/1.1 404 NOT FOUND\r\n\r\n")
-        },
+        }
     };
 
     stream.write_all(response.as_bytes()).unwrap();
